@@ -162,7 +162,17 @@ export function useGameNet() {
 
   const attachIncoming = useCallback(
     (conn) => {
+      // Uma mensagem malformada nunca pode derrubar o handler: sem isso, a
+      // exceção sobe até o RTCDataChannel e a mensagem some sem rastro.
       conn.on('data', (raw) => {
+        try {
+          handleClientMessage(conn, raw)
+        } catch (err) {
+          console.warn('[host] mensagem descartada:', err?.message)
+        }
+      })
+
+      function handleClientMessage(conn, raw) {
         const msg = typeof raw === 'string' ? safeParse(raw) : raw
         if (!msg || typeof msg.t !== 'string') return
 
@@ -193,7 +203,7 @@ export function useGameNet() {
         }
 
         if (entry) applyAction(entry.playerId, msg)
-      })
+      }
 
       conn.on('close', () => dropConnection(conn.peer))
       conn.on('error', () => dropConnection(conn.peer))

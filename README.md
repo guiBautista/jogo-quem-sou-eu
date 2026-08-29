@@ -100,6 +100,20 @@ transmitir uma URL arbitrária e coletar o IP de todo mundo. Só passa `https` e
 `*.wikimedia.org`. Se a imagem não carregar na hora do jogo, a tela cai para só
 o nome.
 
+### Entrada de texto
+
+Nome e personagem chegam pela rede, não por um formulário: `maxLength` e `type`
+do input valem para quem usa a tela, não para quem monta o JSON na mão. O host
+trata tudo como não confiável — exige que seja string, corta antes de aplicar
+regex (carga de 5 MB não vira trabalho), normaliza para NFC e remove caracteres
+de controle, invisíveis e marcas de direção. Os invisíveis importam porque a
+reconexão é por nome: sem removê-los daria para forjar um nome visualmente
+idêntico ao de outro jogador. O handler de mensagens é envolvido em try/catch,
+para uma mensagem malformada nunca derrubar a conexão inteira.
+
+Não há HTML cru em lugar nenhum (sem `dangerouslySetInnerHTML`), então o texto
+sai escapado pelo JSX.
+
 ## Notas de implementação
 
 - **Wake Lock** é reativado quando a aba volta a ficar visível (o SO solta o lock

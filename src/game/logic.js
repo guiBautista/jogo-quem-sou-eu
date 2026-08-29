@@ -30,12 +30,33 @@ function shuffle(list) {
   return arr
 }
 
+// Nada do que chega pela rede passou por um formulário: `maxLength` e `type` do
+// input valem para quem usa a tela, não para quem monta o JSON na mão.
+const MAX_RAW_TEXT = 1000
+
+// Invisíveis e marcas de direção. Dão para forjar dois nomes que a tela mostra
+// idênticos (e a reconexão é por nome) e para embaralhar o texto gigante da
+// fase de adivinhação. O ZWJ (200D) fica, senão emoji composto quebra.
+const INVISIBLE_CHARS =
+  /[\u0000-\u001F\u007F-\u009F\u200B\u200C\u200E\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g
+
+function sanitizeText(raw, maxLength) {
+  if (typeof raw !== 'string') return ''
+  return raw
+    .slice(0, MAX_RAW_TEXT) // corta antes da regex: carga gigante não vira trabalho
+    .normalize('NFC')
+    .replace(/\s+/g, ' ')
+    .replace(INVISIBLE_CHARS, '')
+    .trim()
+    .slice(0, maxLength)
+}
+
 export function sanitizeName(raw) {
-  return (raw || '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX_LENGTH)
+  return sanitizeText(raw, NAME_MAX_LENGTH)
 }
 
 export function sanitizeCharacter(raw) {
-  return (raw || '').replace(/\s+/g, ' ').trim().slice(0, CHARACTER_MAX_LENGTH)
+  return sanitizeText(raw, CHARACTER_MAX_LENGTH)
 }
 
 export function createInitialState({ roomCode, hostId, hostName }) {
