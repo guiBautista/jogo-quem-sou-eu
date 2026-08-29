@@ -4,6 +4,8 @@ Jogo multiplayer "Quem sou eu?" (aquele de colar o papel na testa) como SPA
 mobile-first, **100% client-side**. Não há backend próprio: o estado do jogo vive
 no navegador do host e é sincronizado via **WebRTC P2P** com o PeerJS.
 
+Jogue em **https://guibautista.github.io/jogo-quem-sou-eu/**
+
 ## Rodando
 
 ```bash
@@ -14,6 +16,11 @@ npm run build    # gera dist/ — pode ir para qualquer hospedagem estática
 
 > O WebRTC exige contexto seguro: em produção sirva por **HTTPS** (`localhost` é
 > exceção). Sem isso o navegador bloqueia a conexão P2P.
+
+Todo push na `main` publica sozinho no GitHub Pages
+(`.github/workflows/deploy.yml`). Como o site fica em um subcaminho, o `base` do
+Vite recebe `/jogo-quem-sou-eu/` **só no build** — em dev continua na raiz, para
+o endereço de teste no celular ficar curto.
 
 ## Como o jogo funciona
 
