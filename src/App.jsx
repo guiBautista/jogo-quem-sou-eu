@@ -5,6 +5,7 @@ import { normalizeCode } from './net/protocol.js'
 import HomeScreen from './components/HomeScreen.jsx'
 import Lobby from './components/Lobby.jsx'
 import WritingPhase from './components/WritingPhase.jsx'
+import RoundStartScreen from './components/RoundStartScreen.jsx'
 import PlayingScreen from './components/PlayingScreen.jsx'
 import ResultsScreen from './components/ResultsScreen.jsx'
 import ErrorScreen from './components/ErrorScreen.jsx'
@@ -45,6 +46,9 @@ export default function App() {
   switch (net.state.phase) {
     case PHASE.WRITING:
       return <WritingPhase {...shared} onSubmit={net.submitCharacter} />
+    case PHASE.READY:
+    case PHASE.COUNTDOWN:
+      return <RoundStartScreen {...shared} onStartRound={net.startRound} />
     case PHASE.PLAYING:
       return <PlayingScreen {...shared} onGotIt={net.gotIt} />
     case PHASE.RESULTS:

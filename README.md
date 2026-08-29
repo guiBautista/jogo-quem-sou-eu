@@ -29,13 +29,17 @@ o endereço de teste no celular ficar curto.
 2. **Escolha secreta** — sorteio circular: A escreve o personagem de B, B o de C,
    C o de A. Ninguém escreve para si mesmo. Opcionalmente dá para anexar uma
    imagem: o botão busca o nome digitado e oferece 3 opções para escolher uma.
-3. **Jogo na testa** — cada aparelho mostra em letras gigantes o personagem *do
+3. **Largada** — quando todos confirmam, ninguém vê nome nenhum ainda: a tela
+   avisa para encostar o celular na testa e o host dá a partida, com contagem
+   de 3 segundos. Sem isso o nome aparecia no instante em que o último jogador
+   confirmava, com o pessoal ainda de celular na mão.
+4. **Jogo na testa** — cada aparelho mostra em letras gigantes o personagem *do
    próprio dono* (com a imagem acima, se alguém tiver escolhido uma), para os
    outros lerem. O app **não controla turno**: com o
    celular na testa ninguém consegue ficar apertando "próximo", então o
    revezamento das perguntas acontece na conversa. A única ação é o botão
    "Acertei!", e a ordem em que cada um aperta define a pontuação.
-4. **Resultado** — pontos por ordem de acerto (1º +4, 2º +3, 3º +2, demais +1),
+5. **Resultado** — pontos por ordem de acerto (1º +4, 2º +3, 3º +2, demais +1),
    pódio e placar acumulado. O host inicia a próxima rodada mantendo o placar.
 
 ## Arquitetura de rede (star topology)
@@ -99,6 +103,20 @@ também é só outro jogador: sem essa segunda checagem, quem cria a sala poderi
 transmitir uma URL arbitrária e coletar o IP de todo mundo. Só passa `https` em
 `*.wikimedia.org`. Se a imagem não carregar na hora do jogo, a tela cai para só
 o nome.
+
+### A contagem regressiva
+
+A contagem é desenhada localmente em cada aparelho, mas **a revelação é do
+host**: ele espera `REVEAL_DELAY_MS` e só então troca a fase para `playing`. Se
+cada cliente revelasse por conta própria ao fim do seu próprio timer, os
+relógios divergiriam e uns veriam o nome antes dos outros. Medido com dois
+aparelhos: o nome apareceu nos dois no mesmo milissegundo.
+
+O número exibido vem do tempo decorrido (`Date.now()` menos o início), não de um
+contador que decrementa a cada tick. Navegador atrasa e agrupa timers — aba em
+segundo plano, economia de bateria — e aí um decremento por tick acumula erro e
+mostra "2" quando já deveria ser "0". Recalculando do relógio, um tick atrasado
+se corrige sozinho.
 
 ### Entrada de texto
 

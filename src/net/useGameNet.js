@@ -11,6 +11,7 @@ import {
   HEARTBEAT_MS,
   PEER_TIMEOUT_MS,
   HOST_TIMEOUT_MS,
+  REVEAL_DELAY_MS,
 } from './protocol.js'
 import * as game from '../game/logic.js'
 
@@ -55,6 +56,7 @@ export function useGameNet() {
   const hostConnRef = useRef(null) // client: DataConnection com o host
   const lastHostMsgRef = useRef(0) // client: quando o host falou pela última vez
   const heartbeatRef = useRef(null)
+  const revealTimerRef = useRef(null)
   const roleRef = useRef(null)
   const myIdRef = useRef(null)
   const aliveRef = useRef(true)
@@ -69,6 +71,8 @@ export function useGameNet() {
   const teardown = useCallback(() => {
     clearInterval(heartbeatRef.current)
     heartbeatRef.current = null
+    clearTimeout(revealTimerRef.current)
+    revealTimerRef.current = null
     connsRef.current.forEach(({ conn }) => {
       try {
         conn.close()
@@ -125,6 +129,19 @@ export function useGameNet() {
           if (game.activePlayers(current).length < MIN_PLAYERS) return
           commit(game.startGame(current))
           return
+        case C2H.START_ROUND: {
+          if (playerId !== current.hostId) return
+          const counting = game.startCountdown(current)
+          if (counting === current) return
+          commit(counting)
+          // A contagem roda localmente em cada aparelho; a revelação continua
+          // sendo do host, senão os relógios divergem e uns veem antes dos outros.
+          clearTimeout(revealTimerRef.current)
+          revealTimerRef.current = setTimeout(() => {
+            if (stateRef.current) commit(game.revealCharacters(stateRef.current))
+          }, REVEAL_DELAY_MS)
+          return
+        }
         case C2H.SUBMIT_CHARACTER:
           commit(game.submitCharacter(current, playerId, msg.character, msg.image))
           return
@@ -369,6 +386,7 @@ export function useGameNet() {
     leaveRoom,
     clearError,
     startGame: () => dispatch({ t: C2H.START_GAME }),
+    startRound: () => dispatch({ t: C2H.START_ROUND }),
     submitCharacter: (character, image) =>
       dispatch({ t: C2H.SUBMIT_CHARACTER, character, image }),
     gotIt: () => dispatch({ t: C2H.GOT_IT }),

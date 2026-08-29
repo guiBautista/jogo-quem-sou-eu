@@ -7,6 +7,8 @@ import { isAllowedImageUrl } from '../net/imageSearch.js'
 export const PHASE = {
   LOBBY: 'lobby',
   WRITING: 'writing',
+  READY: 'ready', // todos escreveram; host espera a galera erguer o celular
+  COUNTDOWN: 'countdown',
   PLAYING: 'playing',
   RESULTS: 'results',
 }
@@ -132,8 +134,11 @@ export function handleDisconnect(state, playerId) {
 
   next = { ...next, remaining: next.remaining.filter((id) => id !== playerId) }
 
-  if (next.phase === PHASE.WRITING && isEveryCharacterReady(next)) next = beginPlaying(next)
-  else if (next.phase === PHASE.PLAYING && next.remaining.length === 0) next = finishRound(next)
+  const roundRunning =
+    next.phase === PHASE.READY || next.phase === PHASE.COUNTDOWN || next.phase === PHASE.PLAYING
+
+  if (next.phase === PHASE.WRITING && isEveryCharacterReady(next)) next = beginReady(next)
+  else if (roundRunning && next.remaining.length === 0) next = finishRound(next)
 
   return next
 }
@@ -185,13 +190,25 @@ export function submitCharacter(state, playerId, rawText, rawImage) {
     characters: { ...state.characters, [targetId]: character },
     images: { ...state.images, [targetId]: image },
   }
-  return isEveryCharacterReady(next) ? beginPlaying(next) : next
+  return isEveryCharacterReady(next) ? beginReady(next) : next
 }
 
-function beginPlaying(state) {
+// Todos escreveram: ninguém vê nome ainda. O host dá a largada quando a turma
+// estiver com o celular na testa.
+function beginReady(state) {
   const players = Object.keys(state.targets).filter((id) => getPlayer(state, id)?.connected)
   if (players.length === 0) return finishRound(state)
-  return { ...state, phase: PHASE.PLAYING, remaining: players, finishOrder: [] }
+  return { ...state, phase: PHASE.READY, remaining: players, finishOrder: [] }
+}
+
+export function startCountdown(state) {
+  if (state.phase !== PHASE.READY) return state
+  return { ...state, phase: PHASE.COUNTDOWN }
+}
+
+export function revealCharacters(state) {
+  if (state.phase !== PHASE.COUNTDOWN) return state
+  return { ...state, phase: PHASE.PLAYING }
 }
 
 // ------------------------------------------------------------------ rodada

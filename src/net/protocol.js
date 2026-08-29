@@ -8,6 +8,7 @@ export const C2H = {
   SUBMIT_CHARACTER: 'submit_character',
   GOT_IT: 'got_it',
   START_GAME: 'start_game',
+  START_ROUND: 'start_round',
   NEW_ROUND: 'new_round',
   BACK_TO_LOBBY: 'back_to_lobby',
   PING: 'ping',
@@ -47,6 +48,13 @@ export const MIN_PLAYERS = 2
 
 // Heartbeat: o PeerJS não avisa de forma confiável quando a outra ponta some
 // (aba fechada, celular bloqueado, rede caiu), então detectamos por silêncio.
+// Contagem antes de revelar os personagens: sem ela o nome aparece enquanto o
+// jogador ainda está com o celular na mão.
+export const COUNTDOWN_SECONDS = 3
+// O host revela um pouco depois do fim da contagem, para o "JÁ!" chegar em todo
+// mundo antes do nome — quem receber o estado primeiro não estraga a surpresa.
+export const REVEAL_DELAY_MS = COUNTDOWN_SECONDS * 1000 + 400
+
 export const HEARTBEAT_MS = 3000
 export const PEER_TIMEOUT_MS = 10000
 export const HOST_TIMEOUT_MS = 14000
