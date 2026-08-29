@@ -126,7 +126,7 @@ export function useGameNet() {
           commit(game.startGame(current))
           return
         case C2H.SUBMIT_CHARACTER:
-          commit(game.submitCharacter(current, playerId, msg.character))
+          commit(game.submitCharacter(current, playerId, msg.character, msg.image))
           return
         case C2H.GOT_IT:
           commit(game.gotIt(current, playerId))
@@ -359,7 +359,8 @@ export function useGameNet() {
     leaveRoom,
     clearError,
     startGame: () => dispatch({ t: C2H.START_GAME }),
-    submitCharacter: (character) => dispatch({ t: C2H.SUBMIT_CHARACTER, character }),
+    submitCharacter: (character, image) =>
+      dispatch({ t: C2H.SUBMIT_CHARACTER, character, image }),
     gotIt: () => dispatch({ t: C2H.GOT_IT }),
     newRound: () => dispatch({ t: C2H.NEW_ROUND }),
     backToLobby: () => dispatch({ t: C2H.BACK_TO_LOBBY }),

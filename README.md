@@ -27,9 +27,11 @@ o endereço de teste no celular ficar curto.
 1. **Lobby** — alguém cria a sala e vira o host; os outros entram com o código de
    5 caracteres (ou pelo link `?sala=CODIGO`). Mínimo de 2 jogadores.
 2. **Escolha secreta** — sorteio circular: A escreve o personagem de B, B o de C,
-   C o de A. Ninguém escreve para si mesmo.
+   C o de A. Ninguém escreve para si mesmo. Opcionalmente dá para anexar uma
+   imagem: o botão busca o nome digitado e oferece 3 opções para escolher uma.
 3. **Jogo na testa** — cada aparelho mostra em letras gigantes o personagem *do
-   próprio dono*, para os outros lerem. O app **não controla turno**: com o
+   próprio dono* (com a imagem acima, se alguém tiver escolhido uma), para os
+   outros lerem. O app **não controla turno**: com o
    celular na testa ninguém consegue ficar apertando "próximo", então o
    revezamento das perguntas acontece na conversa. A única ação é o botão
    "Acertei!", e a ordem em que cada um aperta define a pontuação.
@@ -73,10 +75,25 @@ src/
   App.jsx                 roteamento por fase do jogo
   game/logic.js           regras puras (só o host executa) — sem React, testável
   net/protocol.js         tipos de mensagem, códigos de erro, constantes
+  net/imageSearch.js      busca de imagens na Wikimedia (sem chave, com CORS)
   net/useGameNet.js       PeerJS: host, cliente, heartbeat, broadcast
   hooks/useWakeLock.js    Screen Wake Lock API (tela não apaga durante a partida)
   components/             telas: Home, Lobby, Writing, Playing, Results, Error
 ```
+
+### Busca de imagens
+
+Num app 100% client-side não existe chave de API secreta — qualquer credencial no
+código ficaria visível no devtools, e a cota seria do dono do site. Por isso a
+busca usa a API da Wikimedia, que é gratuita, não pede chave e responde com
+`access-control-allow-origin: *`. A Wikipédia em português acerta bem personagens
+e pessoas; quando não devolve nada, o Commons entra como reserva.
+
+Só a **URL** trafega pelo WebRTC (uma string curta) — cada aparelho carrega a
+imagem direto da Wikimedia, então nenhum byte de imagem passa pelo P2P. O host
+valida a URL antes de repassar e aceita apenas hosts `*.wikimedia.org`: sem isso,
+um cliente adulterado poderia fazer o navegador de todo mundo buscar um endereço
+qualquer. Se a imagem não carregar na hora do jogo, a tela cai para só o nome.
 
 ## Notas de implementação
 

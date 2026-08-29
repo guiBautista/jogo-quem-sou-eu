@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { CheckCircle2, Lightbulb, PartyPopper, Zap, ZapOff } from 'lucide-react'
 import { Avatar, Screen } from './ui.jsx'
 import { useWakeLock } from '../hooks/useWakeLock.js'
@@ -5,8 +6,11 @@ import { getPlayer } from '../game/logic.js'
 
 export default function PlayingScreen({ state, myId, onGotIt }) {
   const { supported, held } = useWakeLock(true)
+  // Se a imagem não carregar (offline, link quebrado), a rodada segue só com o nome.
+  const [imageBroken, setImageBroken] = useState(false)
 
   const myCharacter = state.characters[myId]
+  const myImage = imageBroken ? null : state.images?.[myId]
   const myPosition = state.finishOrder.indexOf(myId)
   const finished = myPosition !== -1
   const total = state.remaining.length + state.finishOrder.length
@@ -55,6 +59,14 @@ export default function PlayingScreen({ state, myId, onGotIt }) {
               <h2 className="mt-2 text-3xl font-black">Você era</h2>
               <p className="mt-1 text-2xl font-black text-emerald-300">{myCharacter}</p>
             </div>
+            {myImage && (
+              <img
+                src={myImage}
+                alt={myCharacter}
+                onError={() => setImageBroken(true)}
+                className="max-h-40 w-auto rounded-2xl border border-white/10 object-contain"
+              />
+            )}
           </main>
 
           <footer className="shrink-0 px-5 pt-2 pb-6 text-center">
@@ -90,12 +102,29 @@ export default function PlayingScreen({ state, myId, onGotIt }) {
         <header className="shrink-0 px-5 py-3">{status}</header>
 
         {/* O personagem, gigante, virado para os outros lerem */}
-        <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 text-center">
-          <p className="mb-4 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+        <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
+          <p className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
             <Lightbulb className="h-3 w-3" />
             Encoste na testa · não olhe
           </p>
-          <h1 className="text-[clamp(2.25rem,12vw,4.5rem)] leading-[1.05] font-black tracking-tight break-words text-white [text-wrap:balance]">
+
+          {myImage && (
+            <img
+              src={myImage}
+              alt=""
+              onError={() => setImageBroken(true)}
+              className="max-h-[44%] min-h-0 w-auto max-w-full rounded-2xl border border-white/10 object-contain"
+            />
+          )}
+
+          {/* O nome é o que precisa ser lido de longe, então a imagem cede espaço a ele */}
+          <h1
+            className={`leading-[1.05] font-black tracking-tight break-words text-white [text-wrap:balance] ${
+              myImage
+                ? 'text-[clamp(1.75rem,9vw,3.25rem)]'
+                : 'text-[clamp(2.25rem,12vw,4.5rem)]'
+            }`}
+          >
             {myCharacter || '…'}
           </h1>
         </main>

@@ -2,6 +2,7 @@
 // Só o HOST executa este módulo — ele é o Single Source of Truth.
 
 import { MAX_PLAYERS, MIN_PLAYERS, ERR } from '../net/protocol.js'
+import { isAllowedImageUrl } from '../net/imageSearch.js'
 
 export const PHASE = {
   LOBBY: 'lobby',
@@ -46,6 +47,7 @@ export function createInitialState({ roomCode, hostId, hostName }) {
     players: [{ id: hostId, name: hostName, score: 0, connected: true }],
     targets: {}, // { autorId: alvoId }
     characters: {}, // { alvoId: 'personagem' | null }
+    images: {}, // { alvoId: url | null } — opcional, escolhida por quem escreveu
     remaining: [], // quem ainda não acertou nesta rodada
     finishOrder: [],
     roundPoints: {},
@@ -137,13 +139,14 @@ export function startGame(state) {
     round: state.round + 1,
     targets,
     characters,
+    images: {},
     remaining: [],
     finishOrder: [],
     roundPoints: {},
   }
 }
 
-export function submitCharacter(state, playerId, rawText) {
+export function submitCharacter(state, playerId, rawText, rawImage) {
   if (state.phase !== PHASE.WRITING) return state
   const targetId = state.targets[playerId]
   if (!targetId || state.characters[targetId]) return state
@@ -151,7 +154,16 @@ export function submitCharacter(state, playerId, rawText) {
   const character = sanitizeCharacter(rawText)
   if (!character) return state
 
-  const next = { ...state, characters: { ...state.characters, [targetId]: character } }
+  // A imagem vai parar no navegador de todo mundo, então o host só aceita URLs
+  // da Wikimedia — senão um cliente adulterado poderia apontar os aparelhos dos
+  // outros para qualquer endereço.
+  const image = isAllowedImageUrl(rawImage) ? rawImage : null
+
+  const next = {
+    ...state,
+    characters: { ...state.characters, [targetId]: character },
+    images: { ...state.images, [targetId]: image },
+  }
   return isEveryCharacterReady(next) ? beginPlaying(next) : next
 }
 
@@ -211,6 +223,7 @@ export function backToLobby(state) {
     phase: PHASE.LOBBY,
     targets: {},
     characters: {},
+    images: {},
     remaining: [],
     finishOrder: [],
     roundPoints: {},

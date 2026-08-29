@@ -82,6 +82,17 @@ export default function ResultsScreen({ state, myId, isHost, onNewRound, onBackT
                       <span className="w-5 text-center text-sm font-black text-slate-500">
                         {i + 1}º
                       </span>
+                      {state.images?.[id] && (
+                        <img
+                          src={state.images[id]}
+                          alt=""
+                          loading="lazy"
+                          className="h-9 w-9 shrink-0 rounded-lg border border-white/10 object-cover"
+                          onError={(e) => {
+                            e.currentTarget.hidden = true
+                          }}
+                        />
+                      )}
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-bold">{p.name}</span>
                         <span className="block truncate text-xs text-slate-400">
