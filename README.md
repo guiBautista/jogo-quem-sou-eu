@@ -90,10 +90,15 @@ busca usa a API da Wikimedia, que é gratuita, não pede chave e responde com
 e pessoas; quando não devolve nada, o Commons entra como reserva.
 
 Só a **URL** trafega pelo WebRTC (uma string curta) — cada aparelho carrega a
-imagem direto da Wikimedia, então nenhum byte de imagem passa pelo P2P. O host
-valida a URL antes de repassar e aceita apenas hosts `*.wikimedia.org`: sem isso,
-um cliente adulterado poderia fazer o navegador de todo mundo buscar um endereço
-qualquer. Se a imagem não carregar na hora do jogo, a tela cai para só o nome.
+imagem direto da Wikimedia, então nenhum byte de imagem passa pelo P2P.
+
+A URL é validada **duas vezes**, e as duas importam. O host confere antes de
+repassar, para um cliente adulterado não conseguir apontar o navegador da sala
+para um endereço qualquer. E quem renderiza confere de novo, porque o host
+também é só outro jogador: sem essa segunda checagem, quem cria a sala poderia
+transmitir uma URL arbitrária e coletar o IP de todo mundo. Só passa `https` em
+`*.wikimedia.org`. Se a imagem não carregar na hora do jogo, a tela cai para só
+o nome.
 
 ## Notas de implementação
 

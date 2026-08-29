@@ -1,6 +1,7 @@
 import { Crown, Home, Medal, RotateCw, Trophy } from 'lucide-react'
 import { Avatar, Button, Screen } from './ui.jsx'
 import { ranking } from '../game/logic.js'
+import { isAllowedImageUrl } from '../net/imageSearch.js'
 
 const PODIUM_STYLE = [
   { height: 'h-28', ring: 'ring-amber-400/60', bar: 'from-amber-400/30 to-amber-400/5', text: 'text-amber-300' },
@@ -9,6 +10,8 @@ const PODIUM_STYLE = [
 ]
 
 export default function ResultsScreen({ state, myId, isHost, onNewRound, onBackToLobby }) {
+  // Mesma checagem da tela de jogo: nunca renderizar URL de terceiro sem validar.
+  const imageFor = (id) => (isAllowedImageUrl(state.images?.[id]) ? state.images[id] : null)
   const board = ranking(state)
   const podium = board.slice(0, 3)
   const rest = board.slice(3)
@@ -82,9 +85,9 @@ export default function ResultsScreen({ state, myId, isHost, onNewRound, onBackT
                       <span className="w-5 text-center text-sm font-black text-slate-500">
                         {i + 1}º
                       </span>
-                      {state.images?.[id] && (
+                      {imageFor(id) && (
                         <img
-                          src={state.images[id]}
+                          src={imageFor(id)}
                           alt=""
                           loading="lazy"
                           className="h-9 w-9 shrink-0 rounded-lg border border-white/10 object-cover"

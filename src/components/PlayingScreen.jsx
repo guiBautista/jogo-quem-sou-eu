@@ -3,6 +3,7 @@ import { CheckCircle2, Lightbulb, PartyPopper, Zap, ZapOff } from 'lucide-react'
 import { Avatar, Screen } from './ui.jsx'
 import { useWakeLock } from '../hooks/useWakeLock.js'
 import { getPlayer } from '../game/logic.js'
+import { isAllowedImageUrl } from '../net/imageSearch.js'
 
 export default function PlayingScreen({ state, myId, onGotIt }) {
   const { supported, held } = useWakeLock(true)
@@ -10,7 +11,11 @@ export default function PlayingScreen({ state, myId, onGotIt }) {
   const [imageBroken, setImageBroken] = useState(false)
 
   const myCharacter = state.characters[myId]
-  const myImage = imageBroken ? null : state.images?.[myId]
+  // O host valida a URL antes de repassar, mas o host é outro jogador: quem
+  // renderiza confere de novo, senão um host adulterado faria o navegador de
+  // todo mundo buscar o endereço que ele quisesse.
+  const claimedImage = state.images?.[myId]
+  const myImage = imageBroken || !isAllowedImageUrl(claimedImage) ? null : claimedImage
   const myPosition = state.finishOrder.indexOf(myId)
   const finished = myPosition !== -1
   const total = state.remaining.length + state.finishOrder.length
