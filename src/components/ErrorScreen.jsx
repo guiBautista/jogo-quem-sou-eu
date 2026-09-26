@@ -3,8 +3,8 @@ import { Button, Screen } from './ui.jsx'
 
 export default function ErrorScreen({ error, onRetry }) {
   return (
-    <Screen>
-      <div className="pt-safe pb-safe flex h-full flex-col items-center justify-center gap-6 px-8 text-center">
+    <Screen scrollable>
+      <div className="pt-safe pb-safe flex h-full flex-col items-center justify-center gap-6 px-8 py-6 text-center">
         <div className="animate-pop flex h-20 w-20 items-center justify-center rounded-full bg-rose-500/15 ring-4 ring-rose-500/20">
           <PlugZap className="h-10 w-10 text-rose-400" />
         </div>

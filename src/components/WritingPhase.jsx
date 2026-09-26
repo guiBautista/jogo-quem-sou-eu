@@ -1,10 +1,91 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Eye, Hourglass, ImageOff, ImagePlus, Loader2, PencilLine, Send, X } from 'lucide-react'
+import {
+  Check,
+  Eye,
+  Hourglass,
+  ImageOff,
+  ImagePlus,
+  Loader2,
+  PencilLine,
+  Send,
+  SkipForward,
+  WifiOff,
+  X,
+} from 'lucide-react'
 import { Avatar, Button, Screen, TextInput } from './ui.jsx'
-import { CHARACTER_MAX_LENGTH, getPlayer } from '../game/logic.js'
+import { CHARACTER_MAX_LENGTH, getPlayer, pendingAuthors } from '../game/logic.js'
 import { searchImages } from '../net/imageSearch.js'
 
-export default function WritingPhase({ state, myId, onSubmit }) {
+/**
+ * Quem ainda deve um personagem. Marca quem caiu — e só para o host — oferece
+ * pular: sem isso a rodada trava esperando um aparelho que não volta mais.
+ */
+function PendingPanel({ state, isHost, onSkipWriter }) {
+  const authors = Object.keys(state.targets)
+  const pending = pendingAuthors(state)
+  const offline = pending.filter((id) => getPlayer(state, id)?.connected === false)
+
+  return (
+    <div className="pb-6">
+      <p className="mb-3 flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+        <Hourglass className="h-3.5 w-3.5" />
+        Faltam
+      </p>
+      <ul className="flex flex-wrap justify-center gap-2">
+        {authors.map((authorId) => {
+          const author = getPlayer(state, authorId)
+          if (!author) return null
+          const done = !pending.includes(authorId)
+          const down = !author.connected
+
+          let tone = 'border-white/10 bg-white/5 text-slate-400'
+          if (done) tone = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+          else if (down) tone = 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+
+          return (
+            <li
+              key={authorId}
+              className={`flex items-center gap-2 rounded-full border py-1.5 pr-3 pl-1.5 text-sm font-semibold ${tone}`}
+            >
+              <Avatar name={author.name} className="h-6 w-6 text-[10px]" />
+              {author.name}
+              {done && <Check className="h-3.5 w-3.5" />}
+              {!done && down && <WifiOff className="h-3.5 w-3.5" />}
+            </li>
+          )
+        })}
+      </ul>
+
+      {offline.length > 0 && (
+        <div className="animate-fade-up mt-4 rounded-2xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-center">
+          <p className="text-xs leading-relaxed text-amber-200/80">
+            {offline.length === 1
+              ? `${getPlayer(state, offline[0]).name} caiu da sala. Se reabrir o jogo com o mesmo nome, retoma a vez.`
+              : `${offline.length} jogadores caíram da sala. Reabrindo o jogo com o mesmo nome, cada um retoma a vez.`}
+          </p>
+          {isHost && (
+            <ul className="mt-3 space-y-2">
+              {offline.map((id) => (
+                <li key={id}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => onSkipWriter(id)}
+                    className="py-2.5 text-sm"
+                  >
+                    <SkipForward className="h-4 w-4" />
+                    Pular {getPlayer(state, id).name}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function WritingPhase({ state, myId, isHost, onSubmit, onSkipWriter }) {
   const [text, setText] = useState('')
   const [image, setImage] = useState(null)
   const [results, setResults] = useState(null) // null = ainda não buscou
@@ -84,7 +165,7 @@ export default function WritingPhase({ state, myId, onSubmit }) {
 
   if (!target) {
     return (
-      <Screen>
+      <Screen scrollable>
         <div className="pb-safe flex h-full flex-col px-5">
           {header}
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
@@ -93,6 +174,7 @@ export default function WritingPhase({ state, myId, onSubmit }) {
               Você está assistindo esta rodada. Entra na próxima!
             </p>
           </div>
+          <PendingPanel state={state} isHost={isHost} onSkipWriter={onSkipWriter} />
         </div>
       </Screen>
     )
@@ -100,7 +182,7 @@ export default function WritingPhase({ state, myId, onSubmit }) {
 
   if (alreadySent) {
     return (
-      <Screen>
+      <Screen scrollable>
         <div className="pb-safe flex h-full flex-col px-5">
           {header}
           <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
@@ -115,33 +197,7 @@ export default function WritingPhase({ state, myId, onSubmit }) {
             </div>
           </div>
 
-          <div className="pb-6">
-            <p className="mb-3 flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-              <Hourglass className="h-3.5 w-3.5" />
-              Faltam
-            </p>
-            <ul className="flex flex-wrap justify-center gap-2">
-              {authors.map((authorId) => {
-                const done = Boolean(state.characters[state.targets[authorId]])
-                const author = getPlayer(state, authorId)
-                if (!author) return null
-                return (
-                  <li
-                    key={authorId}
-                    className={`flex items-center gap-2 rounded-full border py-1.5 pr-3 pl-1.5 text-sm font-semibold ${
-                      done
-                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                        : 'border-white/10 bg-white/5 text-slate-400'
-                    }`}
-                  >
-                    <Avatar name={author.name} className="h-6 w-6 text-[10px]" />
-                    {author.name}
-                    {done && <Check className="h-3.5 w-3.5" />}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
+          <PendingPanel state={state} isHost={isHost} onSkipWriter={onSkipWriter} />
         </div>
       </Screen>
     )
@@ -150,7 +206,7 @@ export default function WritingPhase({ state, myId, onSubmit }) {
   const canSearch = text.trim().length >= 2
 
   return (
-    <Screen>
+    <Screen scrollable>
       <div className="pb-safe flex h-full flex-col overflow-y-auto px-5">
         {header}
 

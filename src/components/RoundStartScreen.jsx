@@ -56,8 +56,8 @@ export default function RoundStartScreen({ state, isHost, onStartRound }) {
             key={remaining}
             className={`animate-pop font-black tracking-tight ${
               remaining === 0
-                ? 'text-[clamp(3.5rem,20vw,7rem)] text-emerald-400'
-                : 'text-[clamp(6rem,40vw,14rem)] leading-none text-white'
+                ? 'text-[clamp(3.5rem,20vw,7rem)] text-emerald-400 short:text-[clamp(2.5rem,24vh,5rem)]'
+                : 'text-[clamp(6rem,40vw,14rem)] leading-none text-white short:text-[clamp(3rem,45vh,9rem)]'
             }`}
           >
             {remaining === 0 ? 'JÁ!' : remaining}
@@ -69,16 +69,18 @@ export default function RoundStartScreen({ state, isHost, onStartRound }) {
 
   return (
     <Screen>
-      <div className="pt-safe pb-safe flex h-full flex-col px-6">
-        <header className="pt-4 text-center">
+      {/* Deitado o botão vai para o lado: o host não pode ficar procurando a
+          largada abaixo da dobra com todo mundo de celular na testa. */}
+      <div className="pt-safe pb-safe flex h-full flex-col px-6 short:flex-row short:items-center short:gap-6 short:px-5">
+        <header className="pt-4 text-center short:hidden">
           <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
             Rodada {state.round}
           </p>
         </header>
 
-        <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <div className="animate-pop flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15 ring-4 ring-emerald-500/20">
-            <Check className="h-10 w-10 text-emerald-400" />
+        <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center short:gap-3">
+          <div className="animate-pop flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15 ring-4 ring-emerald-500/20 short:h-14 short:w-14">
+            <Check className="h-10 w-10 text-emerald-400 short:h-7 short:w-7" />
           </div>
           <div>
             <h1 className="text-2xl font-black">Todo mundo já escolheu</h1>
@@ -87,13 +89,13 @@ export default function RoundStartScreen({ state, isHost, onStartRound }) {
               Encoste o celular na testa antes da largada
             </p>
           </div>
-          <p className="max-w-xs text-xs leading-relaxed text-slate-500">
+          <p className="max-w-xs text-xs leading-relaxed text-slate-500 short:hidden">
             Vai ter uma contagem de {COUNTDOWN_SECONDS} segundos. Os nomes só aparecem depois
             dela — ninguém precisa correr.
           </p>
         </main>
 
-        <footer className="pb-6">
+        <footer className="pb-6 short:w-60 short:shrink-0 short:pb-0">
           {isHost ? (
             <Button onClick={onStartRound}>
               <Play className="h-5 w-5" />

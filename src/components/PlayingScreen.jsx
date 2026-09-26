@@ -5,6 +5,33 @@ import { useWakeLock } from '../hooks/useWakeLock.js'
 import { getPlayer } from '../game/logic.js'
 import { isAllowedImageUrl } from '../net/imageSearch.js'
 
+// O nome tem que ser lido de longe, mas "Imperador Palpatine de Naboo" no mesmo
+// corpo de "Pelé" transborda a tela — e o que transborda é cortado. O tamanho
+// cai por faixa de comprimento, e de novo quando divide espaço com a imagem.
+// `short:` é o celular deitado, onde a altura (vh) é que manda, não a largura.
+// As classes são literais porque o Tailwind varre o código: string montada em
+// runtime não vira CSS.
+const NAME_SIZES = [
+  {
+    alone: 'text-[clamp(2.25rem,12vw,4.5rem)] short:text-[clamp(2rem,22vh,6rem)]',
+    withImage: 'text-[clamp(1.75rem,9vw,3.25rem)] short:text-[clamp(1.5rem,15vh,3.75rem)]',
+  },
+  {
+    alone: 'text-[clamp(1.75rem,9vw,3.5rem)] short:text-[clamp(1.75rem,18vh,4.5rem)]',
+    withImage: 'text-[clamp(1.5rem,7.5vw,2.75rem)] short:text-[clamp(1.25rem,12vh,3rem)]',
+  },
+  {
+    alone: 'text-[clamp(1.5rem,7vw,2.75rem)] short:text-[clamp(1.25rem,13vh,3rem)]',
+    withImage: 'text-[clamp(1.25rem,6vw,2.25rem)] short:text-[clamp(1.1rem,9vh,2.25rem)]',
+  },
+]
+
+function nameSizeClass(name, withImage) {
+  const chars = (name || '').length
+  const tier = chars <= 14 ? 0 : chars <= 26 ? 1 : 2
+  return NAME_SIZES[tier][withImage ? 'withImage' : 'alone']
+}
+
 export default function PlayingScreen({ state, myId, onGotIt }) {
   const { supported, held } = useWakeLock(true)
   // Se a imagem não carregar (offline, link quebrado), a rodada segue só com o nome.
@@ -49,11 +76,11 @@ export default function PlayingScreen({ state, myId, onGotIt }) {
 
   if (finished) {
     return (
-      <Screen>
+      <Screen scrollable>
         <div className="pt-safe pb-safe flex h-full flex-col">
           <header className="shrink-0 px-5 py-3">{status}</header>
 
-          <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
+          <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6 py-4 text-center">
             <div className="animate-pop flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/15 ring-4 ring-emerald-500/25">
               <PartyPopper className="h-12 w-12 text-emerald-400" />
             </div>
@@ -103,12 +130,14 @@ export default function PlayingScreen({ state, myId, onGotIt }) {
 
   return (
     <Screen>
-      <div className="pt-safe pb-safe flex h-full flex-col">
-        <header className="shrink-0 px-5 py-3">{status}</header>
+      {/* Deitado (o jeito que a galera segura na testa) tudo vira uma linha:
+          o nome ganha a altura inteira em vez de disputar espaço com o botão. */}
+      <div className="pt-safe pb-safe flex h-full flex-col short:flex-row short:items-stretch short:gap-3 short:px-3">
+        <header className="shrink-0 px-5 py-3 short:hidden">{status}</header>
 
         {/* O personagem, gigante, virado para os outros lerem */}
-        <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-          <p className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+        <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-hidden px-4 text-center short:flex-row short:gap-4 short:px-0">
+          <p className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600 short:hidden">
             <Lightbulb className="h-3 w-3" />
             Encoste na testa · não olhe
           </p>
@@ -118,32 +147,30 @@ export default function PlayingScreen({ state, myId, onGotIt }) {
               src={myImage}
               alt=""
               onError={() => setImageBroken(true)}
-              className="max-h-[44%] min-h-0 w-auto max-w-full rounded-2xl border border-white/10 object-contain"
+              className="max-h-[44%] min-h-0 w-auto max-w-full rounded-2xl border border-white/10 object-contain short:max-h-full short:max-w-[34%] short:shrink-0"
             />
           )}
 
-          {/* O nome é o que precisa ser lido de longe, então a imagem cede espaço a ele */}
           <h1
-            className={`leading-[1.05] font-black tracking-tight break-words text-white [text-wrap:balance] ${
-              myImage
-                ? 'text-[clamp(1.75rem,9vw,3.25rem)]'
-                : 'text-[clamp(2.25rem,12vw,4.5rem)]'
-            }`}
+            className={`leading-[1.05] font-black tracking-tight break-words text-white [text-wrap:balance] ${nameSizeClass(
+              myCharacter,
+              Boolean(myImage),
+            )}`}
           >
             {myCharacter || '…'}
           </h1>
         </main>
 
-        <footer className="shrink-0 px-5 pt-2 pb-6">
+        <footer className="shrink-0 px-5 pt-2 pb-6 short:flex short:w-32 short:flex-col short:justify-center short:px-0 short:pt-0 short:pb-0">
           <button
             type="button"
             onClick={onGotIt}
-            className="flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl bg-gradient-to-b from-emerald-500 to-emerald-600 py-7 text-xl font-black text-white shadow-lg shadow-emerald-950/50 transition active:from-emerald-600 active:to-emerald-700"
+            className="flex w-full flex-col items-center justify-center gap-1.5 rounded-3xl bg-gradient-to-b from-emerald-500 to-emerald-600 py-7 text-xl font-black text-white shadow-lg shadow-emerald-950/50 transition active:from-emerald-600 active:to-emerald-700 short:py-5 short:text-base"
           >
-            <CheckCircle2 className="h-8 w-8" />
+            <CheckCircle2 className="h-8 w-8 short:h-6 short:w-6" />
             Acertei!
           </button>
-          <p className="mt-3 text-center text-xs text-slate-600">
+          <p className="mt-3 text-center text-xs text-slate-600 short:hidden">
             Aperte só quando descobrir quem você é.
           </p>
         </footer>

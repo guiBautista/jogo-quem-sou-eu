@@ -21,7 +21,7 @@ export default function HomeScreen({ onCreate, onJoin, busy, initialCode = '' })
   }
 
   return (
-    <Screen>
+    <Screen scrollable>
       <div className="pt-safe pb-safe flex h-full flex-col justify-between overflow-y-auto px-6">
         <header className="flex flex-col items-center pt-10 text-center">
           <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-fuchsia-600 shadow-2xl shadow-indigo-900/50">

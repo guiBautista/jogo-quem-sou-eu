@@ -34,7 +34,7 @@ export default function Lobby({ state, myId, isHost, onStart, onLeave }) {
   }
 
   return (
-    <Screen>
+    <Screen scrollable>
       <div className="pt-safe pb-safe flex h-full flex-col px-5">
         <header className="flex items-center justify-between py-3">
           <h1 className="text-lg font-black">Sala de espera</h1>

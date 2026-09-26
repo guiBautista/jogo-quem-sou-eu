@@ -145,6 +145,12 @@ export function useGameNet() {
         case C2H.SUBMIT_CHARACTER:
           commit(game.submitCharacter(current, playerId, msg.character, msg.image))
           return
+        case C2H.SKIP_WRITER:
+          if (playerId !== current.hostId) return
+          // `msg.playerId` vem do cliente host, mas quem valida é a regra:
+          // skipWriter só aceita autor desconectado com a vez em aberto.
+          commit(game.skipWriter(current, msg.playerId))
+          return
         case C2H.GOT_IT:
           commit(game.gotIt(current, playerId))
           return
@@ -389,6 +395,7 @@ export function useGameNet() {
     startRound: () => dispatch({ t: C2H.START_ROUND }),
     submitCharacter: (character, image) =>
       dispatch({ t: C2H.SUBMIT_CHARACTER, character, image }),
+    skipWriter: (playerId) => dispatch({ t: C2H.SKIP_WRITER, playerId }),
     gotIt: () => dispatch({ t: C2H.GOT_IT }),
     newRound: () => dispatch({ t: C2H.NEW_ROUND }),
     backToLobby: () => dispatch({ t: C2H.BACK_TO_LOBBY }),

@@ -4,6 +4,11 @@
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* Celular na testa vai na horizontal: sobra largura e falta altura. O `short:`
+   liga o layout compacto — a regra é a altura, não a orientação, porque o que
+   quebra é a sobra vertical (uma janela baixa no desktop tem o mesmo problema). */
+@custom-variant short (@media (max-height: 560px));
+
 html,
 body,
 #root {
@@ -22,6 +27,17 @@ body {
 /* Altura real da viewport no mobile (barra de endereço dinâmica) */
 .h-screen-safe {
   height: 100dvh;
+}
+
+/* Telas com formulário e lista não cabem deitadas. Em vez de cortar o conteúdo
+   (o `overflow-hidden` do Screen), elas passam a rolar. As telas do jogo em si
+   ficam de fora: lá o conteúdo é reorganizado para caber sem rolagem. */
+@media (max-height: 560px) {
+  .h-screen-safe.screen-scroll {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
 }
 
 .pb-safe {

@@ -31,9 +31,13 @@ export function Button({
   )
 }
 
-export function Screen({ children, className = '' }) {
+// `scrollable`: em viewport baixa (celular deitado) a tela rola em vez de cortar.
+export function Screen({ children, scrollable = false, className = '' }) {
   return (
-    <div className={`h-screen-safe overflow-hidden bg-slate-950 text-slate-100 ${className}`}>
+    <div
+      className={`h-screen-safe overflow-hidden bg-slate-950 text-slate-100
+        ${scrollable ? 'screen-scroll' : ''} ${className}`}
+    >
       {children}
     </div>
   )

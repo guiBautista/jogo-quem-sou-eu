@@ -29,6 +29,9 @@ o endereço de teste no celular ficar curto.
 2. **Escolha secreta** — sorteio circular: A escreve o personagem de B, B o de C,
    C o de A. Ninguém escreve para si mesmo. Opcionalmente dá para anexar uma
    imagem: o botão busca o nome digitado e oferece 3 opções para escolher uma.
+   Se alguém cair aqui, a vez dele **espera** — quem volta com o mesmo nome
+   retoma a escrita. Só o host destrava, pelo botão "Pular", quando o aparelho
+   não volta mesmo.
 3. **Largada** — quando todos confirmam, ninguém vê nome nenhum ainda: a tela
    avisa para encostar o celular na testa e o host dá a partida, com contagem
    de 3 segundos. Sem isso o nome aparecia no instante em que o último jogador
@@ -65,12 +68,20 @@ tela bloqueada, rede caiu), o que travaria a rodada esperando alguém que já fo
 embora. Por isso existe um heartbeat nos dois sentidos (`src/net/protocol.js`):
 
 - cliente manda `ping` a cada 3s; o host responde `pong`;
-- o host derruba quem ficar 10s calado e reprocessa a rodada — se o ausente devia
-  um personagem, entra um placeholder para a fase não emperrar;
+- o host derruba quem ficar 10s calado e reprocessa a rodada;
 - o cliente que ficar 14s sem notícia do host cai na tela de erro.
 
 Quem cai continua no placar e **reassume o próprio slot ao voltar com o mesmo
-nome**, inclusive no meio da partida.
+nome**, inclusive no meio da partida: na escolha secreta recupera a vez de
+escrever, e com a rodada rolando volta para a fila de quem ainda tem que
+adivinhar.
+
+Cair na escolha secreta **não** preenche o personagem sozinho. A versão que
+preenchia na hora perdia jogo de verdade: quem voltava não conseguia mais
+escrever e o outro ficava com "Personagem misterioso" na testa. Como quase toda
+queda é temporária (tela bloqueou, wifi oscilou), a vez fica esperando — e quando
+o aparelho não volta mesmo, o host vê o aviso na tela e decide pular
+(`skip_writer`, ação exclusiva do host).
 
 ## Estrutura
 
@@ -84,6 +95,22 @@ src/
   hooks/useWakeLock.js    Screen Wake Lock API (tela não apaga durante a partida)
   components/             telas: Home, Lobby, Writing, Playing, Results, Error
 ```
+
+### Celular deitado
+
+A galera encosta o celular na testa **na horizontal** — foi o que aconteceu no
+primeiro teste com gente de verdade. Deitado sobra largura e falta altura, e o
+layout em coluna (cabeçalho, nome, botão gigante embaixo) não cabia.
+
+A variante `short:` (`src/index.css`, `@media (max-height: 560px)`) vira o jogo
+em linha: nas telas de partida o nome ocupa a altura inteira e o "Acertei!" vira
+uma coluna estreita ao lado; nas telas de formulário e placar, que são altas por
+natureza, o `<Screen scrollable>` passa a rolar em vez de cortar o botão. O
+gatilho é a **altura**, não a orientação — o que quebra é a sobra vertical.
+
+O corpo do nome também cai por faixa de comprimento (`NAME_SIZES` em
+`PlayingScreen.jsx`): "Pelé" e um nome de 48 caracteres no mesmo tamanho não
+cabem na mesma tela.
 
 ### Busca de imagens
 

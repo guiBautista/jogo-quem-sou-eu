@@ -6,6 +6,7 @@ export const PEER_PREFIX = 'qsemu-'
 export const C2H = {
   JOIN: 'join',
   SUBMIT_CHARACTER: 'submit_character',
+  SKIP_WRITER: 'skip_writer',
   GOT_IT: 'got_it',
   START_GAME: 'start_game',
   START_ROUND: 'start_round',

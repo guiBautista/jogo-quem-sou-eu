@@ -45,7 +45,9 @@ export default function App() {
 
   switch (net.state.phase) {
     case PHASE.WRITING:
-      return <WritingPhase {...shared} onSubmit={net.submitCharacter} />
+      return (
+        <WritingPhase {...shared} onSubmit={net.submitCharacter} onSkipWriter={net.skipWriter} />
+      )
     case PHASE.READY:
     case PHASE.COUNTDOWN:
       return <RoundStartScreen {...shared} onStartRound={net.startRound} />

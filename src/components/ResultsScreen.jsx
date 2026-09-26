@@ -19,7 +19,7 @@ export default function ResultsScreen({ state, myId, isHost, onNewRound, onBackT
   const podiumLayout = [podium[1], podium[0], podium[2]].filter(Boolean)
 
   return (
-    <Screen>
+    <Screen scrollable>
       <div className="pt-safe pb-safe flex h-full flex-col px-5">
         <header className="shrink-0 py-4 text-center">
           <Trophy className="mx-auto mb-2 h-8 w-8 text-amber-400" />

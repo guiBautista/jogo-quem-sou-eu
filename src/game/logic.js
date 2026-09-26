@@ -72,6 +72,7 @@ export function createInitialState({ roomCode, hostId, hostName }) {
     characters: {}, // { alvoId: 'personagem' | null }
     images: {}, // { alvoId: url | null } — opcional, escolhida por quem escreveu
     remaining: [], // quem ainda não acertou nesta rodada
+    skipped: [], // autores cuja vez o host pulou por queda de conexão
     finishOrder: [],
     roundPoints: {},
   }
@@ -82,6 +83,9 @@ export const activePlayers = (state) => state.players.filter((p) => p.connected)
 export const isEveryCharacterReady = (state) =>
   Object.keys(state.targets).length > 0 &&
   Object.values(state.targets).every((targetId) => Boolean(state.characters[targetId]))
+// Quem ainda deve um personagem nesta rodada.
+export const pendingAuthors = (state) =>
+  Object.keys(state.targets).filter((authorId) => !state.characters[state.targets[authorId]])
 
 // ---------------------------------------------------------------- jogadores
 
@@ -94,13 +98,7 @@ export function addPlayer(state, { name }) {
   // Reconexão: mesmo nome de um jogador que caiu reassume o mesmo slot (e pontuação).
   if (sameName) {
     if (sameName.connected) return { state, error: ERR.NAME_TAKEN }
-    return {
-      state: {
-        ...state,
-        players: state.players.map((p) => (p.id === sameName.id ? { ...p, connected: true } : p)),
-      },
-      playerId: sameName.id,
-    }
+    return { state: reconnectPlayer(state, sameName.id), playerId: sameName.id }
   }
 
   if (state.phase !== PHASE.LOBBY) return { state, error: ERR.GAME_RUNNING }
@@ -113,6 +111,9 @@ export function addPlayer(state, { name }) {
   }
 }
 
+const isRoundRunning = (state) =>
+  state.phase === PHASE.READY || state.phase === PHASE.COUNTDOWN || state.phase === PHASE.PLAYING
+
 // Um jogador caiu: no lobby some da lista; em partida sai da rodada mas mantém a pontuação.
 export function handleDisconnect(state, playerId) {
   if (!getPlayer(state, playerId)) return state
@@ -121,24 +122,51 @@ export function handleDisconnect(state, playerId) {
     return { ...state, players: state.players.filter((p) => p.id !== playerId) }
   }
 
+  // Na escolha secreta a vez dele fica esperando. Quem cai quase sempre volta em
+  // segundos (tela bloqueou, wifi oscilou) e preencher na hora custava caro: o
+  // jogador voltava sem poder escrever e o outro ficava com o placeholder. Se
+  // ele não voltar, o host destrava pelo botão de pular (skipWriter).
   let next = {
     ...state,
     players: state.players.map((p) => (p.id === playerId ? { ...p, connected: false } : p)),
+    remaining: state.remaining.filter((id) => id !== playerId),
   }
 
-  // Se ele ainda devia um personagem, preenche para a rodada não travar.
-  const owedTarget = next.targets[playerId]
-  if (owedTarget && !next.characters[owedTarget]) {
-    next = { ...next, characters: { ...next.characters, [owedTarget]: PLACEHOLDER_CHARACTER } }
+  if (isRoundRunning(next) && next.remaining.length === 0) next = finishRound(next)
+
+  return next
+}
+
+// Voltar não é entrar de novo: o jogador retoma o que estava fazendo quando caiu,
+// em vez de virar espectador da própria rodada.
+function reconnectPlayer(state, playerId) {
+  let next = {
+    ...state,
+    players: state.players.map((p) => (p.id === playerId ? { ...p, connected: true } : p)),
   }
 
-  next = { ...next, remaining: next.remaining.filter((id) => id !== playerId) }
+  const targetId = next.targets[playerId]
 
-  const roundRunning =
-    next.phase === PHASE.READY || next.phase === PHASE.COUNTDOWN || next.phase === PHASE.PLAYING
+  // Voltou ainda na escrita depois de ter sido pulado: devolve a vez dele,
+  // apagando o "Personagem misterioso" que tinha entrado no lugar.
+  if (next.phase === PHASE.WRITING && targetId && next.skipped.includes(playerId)) {
+    next = {
+      ...next,
+      skipped: next.skipped.filter((id) => id !== playerId),
+      characters: { ...next.characters, [targetId]: null },
+      images: { ...next.images, [targetId]: null },
+    }
+  }
 
-  if (next.phase === PHASE.WRITING && isEveryCharacterReady(next)) next = beginReady(next)
-  else if (roundRunning && next.remaining.length === 0) next = finishRound(next)
+  // Rodada já rolando: volta para a fila de quem ainda tem que adivinhar.
+  if (
+    isRoundRunning(next) &&
+    targetId &&
+    !next.remaining.includes(playerId) &&
+    !next.finishOrder.includes(playerId)
+  ) {
+    next = { ...next, remaining: [...next.remaining, playerId] }
+  }
 
   return next
 }
@@ -167,6 +195,7 @@ export function startGame(state) {
     characters,
     images: {},
     remaining: [],
+    skipped: [],
     finishOrder: [],
     roundPoints: {},
   }
@@ -189,6 +218,27 @@ export function submitCharacter(state, playerId, rawText, rawImage) {
     ...state,
     characters: { ...state.characters, [targetId]: character },
     images: { ...state.images, [targetId]: image },
+  }
+  return isEveryCharacterReady(next) ? beginReady(next) : next
+}
+
+// Escape hatch do host: alguém caiu na escolha secreta e não voltou. Preenche a
+// vez dele para a rodada destravar — e o `skipped` deixa a porta aberta caso ele
+// reapareça antes da largada.
+export function skipWriter(state, authorId) {
+  if (state.phase !== PHASE.WRITING) return state
+
+  const author = getPlayer(state, authorId)
+  if (!author || author.connected) return state
+
+  const targetId = state.targets[authorId]
+  if (!targetId || state.characters[targetId]) return state
+
+  const next = {
+    ...state,
+    skipped: [...state.skipped, authorId],
+    characters: { ...state.characters, [targetId]: PLACEHOLDER_CHARACTER },
+    images: { ...state.images, [targetId]: null },
   }
   return isEveryCharacterReady(next) ? beginReady(next) : next
 }
@@ -263,6 +313,7 @@ export function backToLobby(state) {
     characters: {},
     images: {},
     remaining: [],
+    skipped: [],
     finishOrder: [],
     roundPoints: {},
     players: state.players.filter((p) => p.connected),
